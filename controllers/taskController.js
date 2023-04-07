@@ -1,53 +1,77 @@
 const Task = require("../models/Task");
+const asyncWrapper = require("../middlewares/asyncWrapper");
+const { json } = require("express");
 
 // console.log(allTask.myTasks);
 
-const getAllTasks = async (req, res) => {
-  // res.send("Get All Tasks");
-  try {
-    const tasks = await Task.find({});
-    res.status(200).json({ tasks });
-  } catch (er) {
-    res.status(500).json({ msg: er });
+// without wrap with async await
+
+const getAllTasks = asyncWrapper(async (req, res) => {
+  const tasks = await Task.find({});
+  res.status(200).json({ tasks });
+});
+
+// const getAllTasks = asyncWrapper(async (req, res) => {
+//   try {
+//     const tasks = await Task.find({});
+//     res.status(200).json({ tasks });
+//   } catch (er) {
+//     res.status(500).json({ msg: er });
+//   }
+// });
+
+const getTask = async (req, res,next) => {
+  const { id: taskId } = req.params;
+
+  const task = await Task.findOne({ _id: taskId });
+
+  if (!task) {
+    const error = new Error("Not Found")
+
+    error.status = 404
+
+    return next(error)
+    // return res.status(404).json({ msg: `No Task Found with name ${taskId}` });
   }
+
+  res.status(200).json({ task });
 };
 
-const getTask = async (req, res) => {
-  try {
-    const { id: taskName } = req.params;
+const createTask = asyncWrapper(async (req, res) => {
+  const task = await Task.create(req.body);
+  res.status(201).json({ task });
+});
 
-    const task = await Task.findOne({ name: taskName });
+const updateTask = asyncWrapper(async (req, res) => {
+  const { id: taskId } = req.params;
 
-    if (!task) {
-      return res
-        .status(404)
-        .json({ msg: `No Task Found with name ${taskName}` });
-    }
+  const task = await Task.findOneAndUpdate({ _id: taskId }, req.body, {
+    new: true,
+    runValidators: true,
+  });
 
-
-    res.status(200).json({ task });
-
-
-    
-  } catch (er) {
-    res.status(500).json({ msg: er });
+  if (!task) {
+    return res.status(404).json({ msg: `No Task Found with name ${taskId}` });
   }
-};
 
-const createTask = async (req, res) => {
-  try {
-    const task = await Task.create(req.body);
-    res.status(201).json({ task });
-  } catch (er) {
-    res.status(500).json({ msg: er });
+  res.status(200).json({task:task});
+});
+
+
+
+const deleteTask =asyncWrapper(async (req, res) => {
+  
+  const { id: taskId } = req.params;
+
+  const task = await Task.findOneAndDelete({ _id: taskId })
+
+  if (!task) {
+    return res.status(404).json({ msg: `No Task Found with name ${taskId}` });
   }
-};
-const updateTask = (req, res) => {
-  res.send("Update a Task");
-};
-const deleteTask = (req, res) => {
-  res.send("Delete a Task");
-};
+
+  res.status(200).json({task});
+
+})
 
 module.exports = {
   getAllTasks,

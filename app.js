@@ -3,7 +3,8 @@ const tasksRouter = require("./routes/taskRoutes");
 const bodyParser = require("body-parser");
 const dbConnect = require("./db/connect");
 require("dotenv").config();
-const notFound = require("./middlewares/error");
+const notFound = require("./middlewares/not-found");
+const errorHandler = require("./middlewares/error")
 
 const app = express();
 const port = 4000;
@@ -14,7 +15,7 @@ app.use(bodyParser.json());
 
 app.use("/api/v1/tasks", tasksRouter);
 app.use(notFound);
-// console.log(dbConnect);
+app.use(errorHandler)
 
 const start = async () => {
   try {
